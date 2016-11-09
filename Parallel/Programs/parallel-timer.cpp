@@ -20,7 +20,7 @@ void *add(void *);
 void *multiply(void *);
 int timer(int);
 int main(){
-for(int i=1; i<10000; i=i+2000){
+for(int i=1; i<1000; i=i+25){
 int time = timer(i);
 ofstream outputFile;
 outputFile.open("paralleldata_long.txt",ios_base::app);
@@ -44,10 +44,10 @@ while(hi < iterations){
 	}
 
 	pthread_t trying[rows1];
-		
-        for(int x=0; x < rows1; x++)
+	
+        for(int x=0; x<4; x++)
                 pthread_create(&trying[x], NULL, multiply, (void *) x);
-        for(int x=0; x<rows1; x++)
+        for(int x=0; x<4; x++)
                 pthread_join(trying[x],NULL);
 	hi++;
 }
@@ -59,14 +59,16 @@ while(hi < iterations){
 void *multiply (void *row){
         long current_row;
         current_row = (long) row;
+	long limit = rows1/4 * (current_row);
 	int total=0;
+	for(long y=limit; y<(limit+rows1/4); y++){
         for(long x=0; x<rows1; x++)
         {
 		
-                total+=matrix1[current_row][x] * matrix2[x][0];
+                total+=matrix1[y][x] * matrix2[x][0];
         }
-	
 	product[current_row][0] = total;
+	}
         pthread_mutex_unlock(&mut);
 }
 
