@@ -3,72 +3,102 @@
 #include <ctime>
 #include <cstdlib>
 #include <fstream>
+#include <sstream>
 using namespace std;
 
-int sum = 0;
-pthread_mutex_t mut;
-int x=0;
-const int rows1=1000;
-const int cols1=1000;
-const int rows2=1000;
-const int cols2=1;
-int matrix1[rows1][cols1];
-int matrix2[rows2][cols2];
-int product[rows1][cols2];
+// default matrix dimensions
+const int default_dim = 8000;
+int numthreads = 1;
+int rows1=8000;
+int cols1=8000;
+int rows2=8000;
+int cols2=1;
+int matrix1[default_dim][default_dim];
+int matrix2[default_dim][1];
+int product[default_dim][default_dim];
 
+// function declarations
 void *add(void *);
 void *multiply(void *);
-int timer(int);
+int multiplication_timer(int, int, int&);
+void populate_matrices(int, int, int&, int&, int&, int&);
+string NumberToString ( int Number )
+{
+	stringstream ss;
+	ss << Number;
+	return ss.str();
+}
+// main function
 int main(){
-for(int i=1; i<1000; i=i+25){
-int time = timer(i);
-ofstream outputFile;
-outputFile.open("paralleldata_long.txt",ios_base::app);
-outputFile << i << ","<<time << endl;
-outputFile.close();
+	// change these variables alone to control number of iterations, threads, row and column dimensions
+	int iteration_limit = 10000;
+	int threads = 8;
+	int rows = 8192, cols = 8192;
+	string filetitle = "ParallelTimes_" + NumberToString(threads) + "pt" + NumberToString(rows) + "x";
+	populate_matrices(rows,cols, rows1, rows2, cols1, cols2);
+	ofstream outputFile;
+	outputFile.open(filetitle.c_str(), ios_base::app);
+	// writes time for i number of iterations into text file paralleldata_long.txt
+	for(int i=0; i<iteration_limit; i=i+500){
+		int time_process = multiplication_timer(i,threads, numthreads);
+		outputFile << i << ","<< time_process << endl;
+	} 
+	outputFile.close();
 }
+
+// populates matrix1 and matrix2 to desired dimensions, up to 8000
+void populate_matrices(int rows, int cols, int& rows1, int& rows2, int& cols1, int& cols2){
+	rows1 = rows;
+	rows2 = rows;
+	cols1 = cols;
+	cols2 = 1;
+
+	// populate with random values
+	for(int r=0; r< rows; r++){
+        	for(int c=0; c<cols; c++)
+                       matrix1[r][c] = rand() % 100;
+                }
+        for(int r=0; r< rows; r++){
+                for(int c=0; c<1; c++)
+                       matrix2[r][c] = rand() % 100;
+                }
 }
 
-int timer(int iterations){
-int hi=0;	
-time_t t = time(0);
-while(hi < iterations){
-	for(int r=0; r< rows1; r++){
-        	for(int c=0; c<cols1; c++)
-                	matrix1[r][c] = rand() % 100;
-	}
-
-	for(int r=0; r< rows2; r++){
-        	for(int c=0; c<cols2; c++)
-                	matrix2[r][c] = rand() % 100;
-	}
-
-	pthread_t trying[rows1];
+// times iterations x's multiplications of previously populated matrices 
+int multiplication_timer(int iterations,int threads, int& nthreads)
+{
+	nthreads = threads;
+	int cycle=0;	
+	time_t t = time(0);
+	while(cycle < iterations){
+		pthread_t multiply_entry[rows1];
 	
-        for(int x=0; x<4; x++)
-                pthread_create(&trying[x], NULL, multiply, (void *) x);
-        for(int x=0; x<4; x++)
-                pthread_join(trying[x],NULL);
-	hi++;
-}
+        	for(int x=0; x<numthreads; x++){ 
+                	pthread_create(&multiply_entry[x], NULL, multiply, (void *) x);
+		}
+	        for(int x=0; x<numthreads; x++)
+        	        pthread_join(multiply_entry[x],NULL);
+		cycle++;
+	}
 	time_t t2 = time(0);
 	cout << t2-t << endl;
 	return t2-t;
 }
 
+// pthreads function multiplies for given chunks
 void *multiply (void *row){
         long current_row;
         current_row = (long) row;
-	long limit = rows1/4 * (current_row);
-	int total=0;
-	for(long y=limit; y<(limit+rows1/4); y++){
-        for(long x=0; x<rows1; x++)
-        {
-		
-                total+=matrix1[y][x] * matrix2[x][0];
-        }
-	product[current_row][0] = total;
+	long lower_limit = rows1/numthreads * (current_row);
+	long upper_limit = lower_limit + rows1/numthreads;
+	int entry=0;
+	for(long y=lower_limit; y<upper_limit; y++){
+	        for(long x=0; x<rows1; x++)
+        	{
+                	entry+=matrix1[y][x] * matrix2[x][0];
+        	}
+		product[current_row][0] = entry;
 	}
-        pthread_mutex_unlock(&mut);
 }
+
 

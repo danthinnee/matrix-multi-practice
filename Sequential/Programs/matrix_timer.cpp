@@ -6,9 +6,9 @@ using namespace std;
 
 int multiply_time (int iterations){
 	int x = 0;
-	int rows1 = 1000;
-	int cols1 = 1000;
-	int rows2 = 1000;
+	int rows1 = 8192;
+	int cols1 = 8192;
+	int rows2 = 8192;
 	int cols2 = 1;
 	int matrix1[rows1][cols1];
 	int matrix2[rows2][cols2];
@@ -59,7 +59,7 @@ int multiply_time (int iterations){
 
 int main () {
 
-for(int i=1; i < 1000; i=i+10){
+for(int i=0; i < 10000; i=i+500){
 	int iterations = i;
 	int time = multiply_time(iterations);
 	ofstream outputFile;
