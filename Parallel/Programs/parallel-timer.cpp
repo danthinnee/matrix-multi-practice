@@ -7,7 +7,7 @@
 using namespace std;
 
 // default matrix dimensions
-const int default_dim = 8000;
+const int default_dim = 10000;
 int numthreads = 1;
 int rows1=8000;
 int cols1=8000;
@@ -32,7 +32,7 @@ string NumberToString ( int Number )
 int main(){
 	// change these variables alone to control number of iterations, threads, row and column dimensions
 	int iteration_limit = 10000;
-	int threads = 8;
+	int threads = 2;
 	int rows = 8192, cols = 8192;
 	string filetitle = "ParallelTimes_" + NumberToString(threads) + "pt" + NumberToString(rows) + "x";
 	populate_matrices(rows,cols, rows1, rows2, cols1, cols2);
